@@ -1,0 +1,376 @@
+﻿@page "/Concert"
+
+@using MySqlConnector;
+
+<div class="navbar">
+    <h2 class="logo">Concert Finder</h2>
+    <div class="nav-item px-3">
+        <NavLink class="nav-link" href="/">
+            <span class="oi oi-home" aria-hidden="true"></span> Home
+        </NavLink>
+    </div>
+
+</div>
+
+<div class="grid-container" </div>
+<div class="search">
+    <label for="ticketPrice">Enter Ticket Price:</label>
+    <input type="number" id="ticketPrice" @bind="searchPrice" />
+    <button @onclick="SearchByTicketPrice">Search</button>
+</div>
+
+<div class="search">
+    <label for="genre">Enter Genre:</label>
+    <input type="text" id="genre" @bind="searchGenre" />
+    <button @onclick="SearchByGenre">Search</button>
+</div>
+
+<div class="button">
+    <button class="test" @onclick="LoadConcerts">Load All Concerts</button>
+</div>
+
+@if (concertDetails == "allConcerts" || concertDetails == "searchByPrice" || concertDetails == "searchByGenre")
+{
+    <div>
+        <h4>All Concerts:</h4>
+        <ul>
+            @foreach (var concert in concertsToShow)
+            {
+                <li>
+                    <p>
+                        <strong>Ticket Cost:</strong> @concert.TicketCost<br />
+                        <strong>Genre:</strong> @concert.Genre<br />
+                        <strong>Artist:</strong> @concert.Artist<br />
+                        <strong>Date:</strong> @concert.Date.ToString("MM/dd/yyyy")<br />
+                        <strong>Time:</strong> @concert.Time<br />
+                        <strong>Venue:</strong> @concert.Venue<br />
+                        <strong>City:</strong> @concert.City<br />
+                        <strong>Description:</strong> @concert.Description
+                    </p
+                </li>
+            }
+        </ul>
+    </div>
+}
+else
+{
+    <p>@concertDetails</p>
+}
+
+
+
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 0;
+    }
+
+    .navbar {
+        background-color: #333;
+        padding: 10px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        color: white;
+    }
+
+    .logo {
+        font-size: 24px;
+        margin: 0;
+    }
+
+    nav ul {
+        list-style-type: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+    }
+
+        nav ul li {
+            margin-right: 20px;
+        }
+
+            nav ul li a {
+                color: #fff;
+                text-decoration: none;
+            }
+
+    .grid-container {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        grid-gap: 20px;
+        padding: 20px;
+    }
+
+    .search {
+        background-color: #f2f2f2;
+        padding: 20px;
+        border-radius: 8px;
+    }
+
+        .search label {
+            font-size: 16px;
+            margin-right: 10px;
+        }
+
+        .search input[type="number"],
+        .search input[type="text"] {
+            width: 100%;
+            padding: 8px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        .search button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+            .search button:hover {
+                background-color: #45a049;
+            }
+
+    .button {
+        grid-column: span 2;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .test {
+        background-color: #2196F3;
+    }
+
+    h4 {
+        margin-top: 20px;
+    }
+
+    p {
+        font-size: 18px;
+    }
+</style>
+
+@code
+{
+    private List<ConcertModel> allConcerts;
+    private List<ConcertModel> concertsToShow;
+    private string concertDetails;
+    private int searchPrice;
+    private string searchGenre;
+
+    private readonly string connectionString = "Server=localhost;Database=demo211;Uid=root;Pwd=password";
+
+    private void ShowAllConcerts()
+    {
+        concertDetails = "allConcerts";
+    }
+
+    private void SearchByTicketPrice()
+    {
+        try
+        {
+            using MySqlConnection connection = new MySqlConnection(connectionString);
+            connection.Open();
+
+            string query = "SELECT ticket_cost, genre, artist, date, time, venue, city, description FROM concerts WHERE ticket_cost <= @price";
+            using MySqlCommand cmd = new MySqlCommand(query, connection);
+            cmd.Parameters.AddWithValue("@price", searchPrice);
+
+            using MySqlDataReader reader = cmd.ExecuteReader();
+            List<ConcertModel> filteredConcerts = new List<ConcertModel>();
+
+            while (reader.Read())
+            {
+                var ticketCost = reader.GetInt32("ticket_cost");
+                var genre = reader.GetString("genre");
+                var artist = reader.GetString("artist");
+                var date = reader.GetDateTime("date");
+                var time = reader.GetTimeSpan("time").ToString();
+                var venue = reader.GetString("venue");
+                var city = reader.GetString("city");
+                var description = reader.GetString("description");
+
+                var concert = new ConcertModel
+                    {
+                        TicketCost = ticketCost,
+                        Genre = genre,
+                        Artist = artist,
+                        Date = date,
+                        Time = time,
+                        Venue = venue,
+                        City = city,
+                        Description = description
+                    };
+
+                filteredConcerts.Add(concert);
+            }
+
+            concertsToShow = filteredConcerts;
+            concertDetails = "searchByPrice";
+        }
+        catch (MySqlException ex)
+        {
+            concertDetails = "An error occurred: " + ex.Message;
+        }
+    }
+
+    private void SearchByGenre()
+    {
+        try
+        {
+            using MySqlConnection connection = new MySqlConnection(connectionString);
+            connection.Open();
+
+            string query = "SELECT ticket_cost, genre, artist, date, time, venue, city, description FROM concerts WHERE LOWER(genre) LIKE @genre";
+            using MySqlCommand cmd = new MySqlCommand(query, connection);
+            cmd.Parameters.AddWithValue("@genre", $"%{searchGenre.ToLower()}%");
+
+            using MySqlDataReader reader = cmd.ExecuteReader();
+            List<ConcertModel> filteredConcerts = new List<ConcertModel>();
+            while (reader.Read())
+            {
+                var ticketCost = reader.GetInt32("ticket_cost");
+                var genre = reader.GetString("genre");
+                var artist = reader.GetString("artist");
+                var date = reader.GetDateTime("date");
+                var time = reader.GetTimeSpan("time").ToString();
+                var venue = reader.GetString("venue");
+                var city = reader.GetString("city");
+                var description = reader.GetString("description");
+
+                var concert = new ConcertModel
+                    {
+                        TicketCost = ticketCost,
+                        Genre = genre,
+                        Artist = artist,
+                        Date = date,
+                        Time = time,
+                        Venue = venue,
+                        City = city,
+                        Description = description
+                    };
+
+                filteredConcerts.Add(concert);
+            }
+
+
+
+
+            concertsToShow = filteredConcerts;
+            concertDetails = "searchByGenre";
+        }
+        catch (MySqlException ex)
+        {
+            concertDetails = "An error occurred: " + ex.Message;
+        }
+    }
+
+
+    private void ClearConcertDetails()
+    {
+        concertDetails = string.Empty;
+    }
+
+    private void ClearScreen()
+    {
+        searchPrice = 0;
+        searchGenre = string.Empty;
+        concertsToShow = allConcerts;
+        concertDetails = string.Empty;
+    }
+
+    private string FormatConcertDetails(List<ConcertModel> concerts)
+    {
+        var formattedDetails = new List<string>();
+
+        foreach (var concert in concerts)
+        {
+            var details = $"Ticket Cost: {concert.TicketCost}\n" +
+                          $"Genre: {concert.Genre}\n" +
+                          $"Artist: {concert.Artist}\n" +
+                          $"Date: {concert.Date}\n" +
+                          $"Time: {concert.Time}\n" +
+                          $"Venue: {concert.Venue}\n" +
+                          $"City: {concert.City}\n" +
+                          $"Description: {concert.Description}\n";
+
+            formattedDetails.Add(details);
+        }
+
+        return string.Join("\n\n", formattedDetails);
+    }
+
+    private class ConcertModel
+    {
+        public int TicketCost { get; set; }
+        public string? Genre { get; set; }
+        public string? Artist { get; set; }
+        public DateTime Date { get; set; }
+        public string? Time { get; set; }
+        public string? Venue { get; set; }
+        public string? City { get; set; }
+        public string? Description { get; set; }
+    }
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+        LoadConcerts();
+    }
+    private void LoadConcerts()
+{
+    try
+    {
+        using MySqlConnection connection = new MySqlConnection(connectionString);
+        connection.Open();
+
+        string query = "SELECT ticket_cost, genre, artist, date, time, venue, city, description FROM concerts";
+        using MySqlCommand cmd = new MySqlCommand(query, connection);
+
+        using MySqlDataReader reader = cmd.ExecuteReader();
+        List<ConcertModel> allConcerts = new List<ConcertModel>();
+
+        while (reader.Read())
+        {
+            var ticketCost = reader.GetInt32("ticket_cost");
+            var genre = reader.GetString("genre");
+            var artist = reader.GetString("artist");
+            var date = reader.GetDateTime("date");
+            var time = reader.GetTimeSpan("time").ToString();
+            var venue = reader.GetString("venue");
+            var city = reader.GetString("city");
+            var description = reader.GetString("description");
+
+            var concert = new ConcertModel
+                {
+                    TicketCost = ticketCost,
+                    Genre = genre,
+                    Artist = artist,
+                    Date = date,
+                    Time = time,
+                    Venue = venue,
+                    City = city,
+                    Description = description
+                };
+
+            allConcerts.Add(concert);
+        }
+
+        concertsToShow = allConcerts;
+        concertDetails = "allConcerts";
+    }
+    catch (MySqlException ex)
+    {
+        concertDetails = "An error occurred: " + ex.Message;
+        allConcerts = new List<ConcertModel>();
+        concertsToShow = allConcerts;
+    }
+}
+}
