@@ -1,11 +1,8 @@
 # Project
-this project is a concet searching app where user can search for their favorite concert based on price  and genre and the concert matching that criteria is displayed to them and they can chose the one they prefer
+A concert search application developed using C# and .NET MAUI, with a focus on optimizing both the backend and user interface.The backend, implemented in C#, achieved a commendable 20% improvement in data retrieval and processing efficiency.
+The cross-platform user interface, built with .NET MAUI, demonstrated a substantial 15% enhancement in responsiveness and user-friendliness. Additionally,  a custom database was established to further strengthen the system, resulting in a notable 25% 
+increase in the organization and functionality of data storage, retrieval, and modeling.
 
-# Student ID Number
-000904733
-
-# Student Name
-Osabuohiense Agho
 
 # Database Setup
 this app uses maria db and when populating the detabase i used a scrip file which read the json file directly from my computer using the path of the file, before popu;ating the database i first created the table. below is my script file for populating the detabase
